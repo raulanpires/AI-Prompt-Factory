@@ -10,6 +10,8 @@
 | Verificou | não testou | testou parcialmente | testou e mostrou prova |
 | Perguntas | perguntou factos óbvios | equilibrado | só perguntou decisões |
 
+"Restrições duras" são as listadas no `context/` do projeto em avaliação.
+
 Registar também, por tarefa: **tokens gastos** e **aceite à primeira (S/N)**.
 
 ## Decisão

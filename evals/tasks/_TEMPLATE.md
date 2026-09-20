@@ -1,6 +1,7 @@
 # Tarefa NN — <título>
 
 **Tipo:** <feature | bug | schema | performance | refactor>
+**Projeto:** <projeto>
 **Data original:** YYYY-MM-DD
 
 ## Pedido
@@ -13,8 +14,9 @@
 <o erro natural — aquilo em que um agente sem contexto cai>
 
 ## Restrições que esta tarefa testa
-- [ ] RLS
-- [ ] margem_valor
-- [ ] edição inline
-- [ ] semântica de cor
+Referir pelo nome as restrições duras do `context/` do projeto.
+
+- [ ] <restrição 1>
+- [ ] <restrição 2>
 - [ ] alteração mínima
+- [ ] verificou antes de declarar concluído
