@@ -26,6 +26,7 @@ case "$ev" in
     printf '%s' "$list" | sha256sum | cut -c1-12 > "$b.env"
     printf '%s' "$list" | grep -c . >> "$b.env"
     printf '%s' "$input" | jq -r '.cwd // ""' >> "$b.env"
+    printf '%s' "$input" | jq -r '.transcript_path // ""' >> "$b.env"
     ;;
   PostToolUse)
     tool=$(printf '%s' "$input" | jq -r '.tool_name // ""')
@@ -43,10 +44,11 @@ case "$ev" in
       --arg envhash "$(sed -n 1p "$b.env" 2>/dev/null)" \
       --arg skillcount "$(sed -n 2p "$b.env" 2>/dev/null)" \
       --arg cwd "$(sed -n 3p "$b.env" 2>/dev/null)" \
+      --arg transcript "$(printf '%s' "$input" | jq -r '.transcript_path // empty')" \
       --argjson skills "$(sort -u "$b.skills" 2>/dev/null | jq -Rsc 'split("\n")-[""]')" \
       --argjson files  "$(sort -u "$b.files"  2>/dev/null | jq -Rsc 'split("\n")-[""]')" \
       --argjson cmds   "$(cat "$b.cmds" 2>/dev/null | jq -Rsc 'split("\n")-[""]')" \
-      '{session:$sid, at:$ts, cwd:$cwd,
+      '{session:$sid, at:$ts, cwd:$cwd, transcript:$transcript,
         env:{skillset_hash:$envhash, skills_installed:($skillcount|tonumber?)},
         skills_fired:$skills, files_touched:$files, commands:$cmds}' > "$b.json"
     ;;

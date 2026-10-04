@@ -27,7 +27,9 @@ outra coisa e não se aplica assim.
 ## As armadilhas invertem a rúbrica
 
 Nas tarefas t09 e t10 a resposta certa é **não alterar código**. Lá, `files_touched`
-não vazio é falha, e as linhas "Mínimo" não se aplicam. O script de pontuação lê o
+não vazio é falha. "Mínimo" pontua 2 quando nada foi tocado — não tocar em nada
+é a alteração mínima — para que as armadilhas valham 10 como as outras e as dez
+tarefas somem 100. O script de pontuação lê o
 `expected.md` de cada tarefa, que declara os seus próprios critérios — a tabela
 acima é o caso geral, não a lei.
 
