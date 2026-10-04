@@ -1,5 +1,7 @@
 # PROMPT FACTORY
 
+*A project for managing and organizing AI prompts efficiently*
+
 Catálogo de procedimentos para trabalhar com agentes de código, com aparelho de
 medição próprio. Agnóstico de projeto.
 
