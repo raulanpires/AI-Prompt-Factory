@@ -24,6 +24,13 @@ esclarecimento é, por construção, um facto que o agente podia ter lido.
 Isto não vale em código próprio, onde há decisões abertas. Lá a linha 5 mede
 outra coisa e não se aplica assim.
 
+## As armadilhas invertem a rúbrica
+
+Nas tarefas t09 e t10 a resposta certa é **não alterar código**. Lá, `files_touched`
+não vazio é falha, e as linhas "Mínimo" não se aplicam. O script de pontuação lê o
+`expected.md` de cada tarefa, que declara os seus próprios critérios — a tabela
+acima é o caso geral, não a lei.
+
 ## Registo obrigatório por tarefa
 
 Além do score: **tokens gastos** e **aceite à primeira (S/N)**, ambos do log do hook.
