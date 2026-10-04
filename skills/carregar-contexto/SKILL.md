@@ -1,6 +1,7 @@
 ---
 name: carregar-contexto
 description: Carrega o contexto do projeto atual — stack, convenções, restrições duras, vocabulário. Usar antes de qualquer trabalho num repositório coberto pela Factory.
+evaluated: none
 ---
 
 Lê todos os ficheiros de `context/` antes de propor ou alterar seja o que for.

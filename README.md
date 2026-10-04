@@ -1,45 +1,87 @@
 # PROMPT FACTORY
 
-Catálogo de procedimentos para trabalhar com agentes de código. Agnóstico de projeto.
+Catálogo de procedimentos para trabalhar com agentes de código, com aparelho de
+medição próprio. Agnóstico de projeto.
 
-Não é uma biblioteca de prompts. A unidade de reutilização é o **procedimento**:
-ordem das operações, proibições, e o portão que diz que a tarefa acabou.
+A unidade de reutilização é o **procedimento** — ordem das operações, proibições,
+e o portão que diz que a tarefa acabou. Não é o texto do prompt.
 
-## Três camadas
+## Os dois testes
 
-| Pasta | Pergunta | Quem preenche | Muda quando |
+Tudo o que entra aqui passa por estes dois crivos.
+
+**1 — Desobediência observável.** Uma instrução só vale os seus tokens se for
+possível apontar para o output e provar que falhou.
+
+**2 — Estado interno vs. prova.** Uma instrução sobre o estado interno do modelo
+não funciona. Substitui-se por um passo que produz prova.
+
+## Arquitetura
+
+| Camada | Pergunta | Onde | Por projeto? |
 | --- | --- | --- | --- |
-| `context/` | o que é verdade neste projeto | o projeto | o projeto muda |
-| `skills/` | como se trabalha | a Factory | uma falha ensina algo |
-| `evals/` | funcionou? | o projeto | a cada execução |
+| `context/` | o que é verdade neste projeto | ficheiros lidos pelo agente | sim |
+| `skills/` | como se trabalha | `SKILL.md`, carregadas por trigger | não |
+| `hooks/` | o que não pode acontecer | código, corre sempre | não |
+| `evals/` | funcionou? | tarefas + rúbrica mecânica | — |
+| `bench/` | medido contra o quê | repositórios de terceiros | — |
 
-Só `skills/` e `stances/` são da Factory. `context/` e `evals/` são **por projeto** —
-a Factory fornece os templates, cada projeto traz o conteúdo.
+`failures.md` fecha o ciclo: cada falha real vira uma linha numa skill existente
+ou numa proibição de hook.
 
-`failures.md` fecha o ciclo: cada falha real vira uma linha numa skill existente.
+## Decisões fundadoras
 
-## Como se instala num projeto
-
-1. Copia `skills/` e `stances/` para o projeto (ou aponta o agente para aqui).
-2. Escreve `context/<projeto>.md` a partir de `context/_TEMPLATE.md`.
-3. Escreve 10 golden tasks a partir de `evals/tasks/_TEMPLATE.md`.
-4. Mede o baseline **com as skills desligadas**.
-5. Liga as skills. Mede outra vez.
-
-O passo 4 é o que toda a gente salta e depois passa um ano a discutir prompts
-com base em sensações.
+| | Decisão |
+| --- | --- |
+| Banco de ensaio | repositórios de terceiros, nunca código próprio — ver `bench/` |
+| Régua | TanStack/table, 10 tarefas, produz o score |
+| Tropeços | drizzle-orm e excalidraw, 3 tarefas cada, só passa/falha |
+| Pontuação | 100% mecânica, zero juízo humano por corrida |
+| Skills de terceiros | ficam ligadas e instrumentadas, não desativadas |
+| Distribuição | junctions de `~/.agents/skills/` para esta pasta |
+| Âmbito | só agentes de desenvolvimento |
 
 ## Regras da casa
 
 1. Uma skill nasce de uma **falha real**, nunca de uma ideia.
 2. Máximo **15 linhas** de corpo por skill. Crescer só com evidência.
-3. Uma instrução só vale os seus tokens se for possível **desobedecer-lhe de forma observável**.
-4. Nenhuma alteração entra sem correr as golden tasks. Menos de +5 pontos = reverter.
-5. Preferir acrescentar uma linha a uma skill existente do que criar uma skill nova.
-6. Nada específico de um projeto entra em `skills/`. Se entrou, pertence a `context/`.
+3. Nenhuma alteração entra sem correr as golden tasks. Menos de +5 pontos = reverter.
+4. Preferir acrescentar uma linha a uma skill existente do que criar uma skill nova.
+5. Nada específico de um projeto entra em `skills/` ou `hooks/`. Se entrou, pertence a `context/`.
+6. Uma proibição mecanizável pertence a um **hook**, não a um prompt.
+7. Toda a skill declara `evaluated:` no frontmatter. Sem exceção.
 
-## Não reescrever
+## A convenção `evaluated:`
 
-Já instalado via `npx skills add mattpocock/skills`: `grilling`, `code-review`,
-`tdd`, `research`, `domain-modeling`, `pr`, `diagnosing-bugs`, `writing-for-agents`.
-Esta Factory cobre só o que aquelas não cobrem.
+Cada `SKILL.md` declara contra o que foi medida:
+
+```yaml
+evaluated: tanstack-table     # medida, com provas em evals/runs/
+evaluated: none               # não medida — é opinião, e sabe-se que é
+```
+
+Sem esta linha, skills com provas e skills por palpite ficam lado a lado com o
+mesmo aspeto, e em três meses não se distinguem. É o que separa este projeto de
+uma pasta de prompts.
+
+## Instalação
+
+```bash
+# Windows, sem privilégios de administrador:
+mklink /J "%USERPROFILE%\.agents\skills\carregar-contexto" "C:\PROMPT FACTORY\skills\carregar-contexto"
+# ... uma por skill
+
+# Hooks: registar uma vez em ~/.claude/settings.json,
+# apontando para os scripts desta pasta — ver hooks/settings-snippet.json
+```
+
+Fonte única de verdade: esta pasta. Editas aqui, fica ativo no instante seguinte,
+em todos os projetos, sem passo intermédio.
+
+## Estado
+
+- [ ] Clones do banco criados (`bench/setup.sh`)
+- [ ] 10 golden tasks da régua escritas
+- [ ] Hooks registados e a produzir log
+- [ ] Baseline medido
+- [ ] Primeira skill medida com delta

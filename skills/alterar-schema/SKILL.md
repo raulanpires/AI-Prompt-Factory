@@ -1,6 +1,7 @@
 ---
 name: alterar-schema
 description: Alterações ao schema da base de dados — colunas, tabelas, índices, políticas de acesso. Usar sempre que a tarefa implique migração.
+evaluated: none
 ---
 
 Alteração de schema é decisão, não facto. Nunca a executes sem aprovação explícita.

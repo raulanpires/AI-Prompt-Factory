@@ -1,0 +1,3 @@
+# <nome> <sha do commit base>
+# Preenchido por setup.sh. NÃO editar a meio de uma experiência:
+# mudar um pin invalida todas as corridas anteriores.

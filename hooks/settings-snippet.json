@@ -1,0 +1,22 @@
+{
+  "_nota": "Colar os blocos de hooks em ~/.claude/settings.json. Ajustar o caminho se a Factory não estiver em C:\\PROMPT FACTORY. A lógica fica versionada na Factory; só este registo vive fora.",
+  "hooks": {
+    "SessionStart": [
+      { "hooks": [ { "type": "command", "command": "bash '/c/PROMPT FACTORY/hooks/log-run.sh'" } ] }
+    ],
+    "PreToolUse": [
+      { "matcher": "Edit|Write|NotebookEdit",
+        "hooks": [ { "type": "command", "command": "bash '/c/PROMPT FACTORY/hooks/block-constraints.sh'" } ] }
+    ],
+    "PostToolUse": [
+      { "matcher": "Skill|Edit|Write|NotebookEdit|Bash",
+        "hooks": [ { "type": "command", "command": "bash '/c/PROMPT FACTORY/hooks/log-run.sh'" } ] }
+    ],
+    "Stop": [
+      { "hooks": [
+          { "type": "command", "command": "bash '/c/PROMPT FACTORY/hooks/log-run.sh'" },
+          { "type": "command", "command": "bash '/c/PROMPT FACTORY/hooks/exit-gate.sh'" }
+        ] }
+    ]
+  }
+}

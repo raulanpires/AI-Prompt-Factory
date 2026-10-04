@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="pt-pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Prompting Software Factory - ACP Engine</title>
+<style>
+  :root {
+    --bg-primary: #0d1117;
+    --bg-secondary: #161b22;
+    --bg-tertiary: #21262d;
+    --border-color: #30363d;
+    --text-primary: #c9d1d9;
+    --text-secondary: #8b949e;
+    --accent-blue: #58a6ff;
+    --accent-purple: #bc8cff;
+    --accent-green: #3fb950;
+    --accent-orange: #d29922;
+    --accent-red: #f85149;
+    --tag-context: #1f6feb;
+    --tag-persona: #d29922;
+    --tag-execution: #8957e5;
+    --tag-format: #db61a2;
+    --tag-guard: #3fb950;
+    --font-mono: 'SF Mono', Menlo, Consolas, monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* --- Layout Principal --- */
+  .app-container {
+    display: grid;
+    grid-template-columns: 320px 1fr 380px;
+    height: 100vh;
+  }
+
+  /* --- Coluna Esquerda: Input & Raw Prompt --- */
+  .left-panel {
+    background-color: var(--bg-secondary);
+    border-right: 1px solid var(--border-color);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    overflow-y: auto;
+  }
+
+  .brand {
+    font-size: 1.1rem; font-weight: 700;
+    color: var(--accent-purple);
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 10px;
+  }
+  .brand::before { content: '⚡'; font-size: 1.4rem; }
+
+  .panel-label {
+    font-size: 0.75rem; text-transform: uppercase;
+    color: var(--text-secondary); font-weight: 600;
+    letter-spacing: 0.5px; margin-bottom: 4px;
+  }
+
+  textarea {
+    width: 100%; min-height: 120px;
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px; padding: 12px;
+    color: var(--text-primary); font-family: var(--font-sans);
+    font-size: 0.9rem; resize: vertical;
+    transition: border-color 0.2s;
+  }
+  textarea:focus { outline: none; border-color: var(--accent-blue); }
+
+  /* --- Target Selector --- */
+  .target-selector {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  }
+  .target-btn {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 8px; border-radius: 6px;
+    font-size: 0.8rem; cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .target-btn:hover { border-color: var(--accent-blue); color: var(--text-primary); }
+  .target-btn.active {
+    background-color: rgba(88, 166, 255, 0.1);
+    border-color: var(--accent-blue); color: var(--accent-blue);
+    font-weight: 600;
+  }
+  .target-btn .icon { display: block; font-size: 1.2rem; margin-bottom: 4px; }
+
+  /* --- Coluna Central: Visualizador & Output --- */
+  .center-panel {
+    display: flex; flex-direction: column;
+    background-color: var(--bg-primary);
+    overflow: hidden;
+  }
+
+  .topology-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 15px 25px; border-bottom: 1px solid var(--border-color);
+    background-color: var(--bg-secondary);
+  }
+  .topology-info {
+    display: flex; gap: 15px; align-items: center;
+    font-size: 0.85rem; color: var(--text-secondary);
+  }
+  .score-badge {
+    background: rgba(63, 185, 80, 0.15); color: var(--accent-green);
+    padding: 4px 10px; border-radius: 12px;
+    font-weight: 700; font-size: 0.8rem;
+  }
+
+  .compiler-view {
+    flex: 1; padding: 25px; overflow-y: auto;
+  }
+  .compiler-tabs {
+    display: flex; gap: 10px; margin-bottom: 15px;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .compiler-tab {
+    background: none; border: none; color: var(--text-secondary);
+    padding: 8px 15px; font-size: 0.9rem; cursor: pointer;
+    border-bottom: 2px solid transparent; transition: all 0.2s;
+  }
+  .compiler-tab:hover { color: var(--text-primary); }
+  .compiler-tab.active { color: var(--accent-blue); border-color: var(--accent-blue); }
+
+  #promptOutput {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px; padding: 25px;
+    font-family: var(--font-mono); font-size: 0.9rem;
+    line-height: 1.7; white-space: pre-wrap;
+    color: var(--text-primary);
+  }
+
+  /* Tags de blocos do prompt (representação visual) */
+  .tag {
+    display: inline-block; padding: 2px 8px;
+    border-radius: 4px; font-size: 0.85rem; font-weight: 600;
+    margin: 0 2px;
+  }
+  .tag-context { background: rgba(31, 111, 235, 0.2); color: var(--tag-context); }
+  .tag-persona { background: rgba(210, 153, 34, 0.2); color: var(--tag-persona); }
+  .tag-execution { background: rgba(137, 87, 229, 0.2); color: var(--tag-execution); }
+  .tag-format { background: rgba(219, 97, 162, 0.2); color: var(--tag-format); }
+  .tag-guard { background: rgba(63, 185, 80, 0.2); color: var(--tag-guard); }
+
+  .actions-bar {
+    padding: 15px 25px; border-top: 1px solid var(--border-color);
+    background-color: var(--bg-secondary);
+    display: flex; gap: 10px;
+  }
+  .btn {
+    padding: 10px 18px; border-radius: 6px;
+    font-size: 0.85rem; font-weight: 600; cursor: pointer;
+    border: 1px solid var(--border-color); background: var(--bg-tertiary);
+    color: var(--text-primary); transition: all 0.2s;
+  }
+  .btn:hover { background: var(--border-color); }
+  .btn-primary { background: var(--accent-blue); border-color: var(--accent-blue); color: #fff; }
+  .btn-primary:hover { background: #4493f8; }
+  .btn-grow { flex: 1; }
+
+  /* --- Coluna Direita: Dimensões ACP --- */
+  .right-panel {
+    background-color: var(--bg-secondary);
+    border-left: 1px solid var(--border-color);
+    padding: 20px;
+    overflow-y: auto;
+  }
+  .dimension-card {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px; padding: 15px;
+    margin-bottom: 15px;
+  }
+  .dimension-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .dimension-title {
+    font-size: 0.85rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .dimension-title .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .dot-persona { background: var(--tag-persona); }
+  .dot-tone { background: var(--accent-blue); }
+  .dot-execution { background: var(--tag-execution); }
+  .dot-format { background: var(--tag-format); }
+  .dot-guard { background: var(--tag-guard); }
+
+  .dimension-desc {
+    font-size: 0.75rem; color: var(--text-secondary);
+    margin-bottom: 12px;
+  }
+
+  /* Sliders */
+  .slider-group { margin-bottom: 10px; }
+  .slider-label {
+    display: flex; justify-content: space-between;
+    font-size: 0.75rem; color: var(--text-secondary);
+    margin-bottom: 4px;
+  }
+  input[type="range"] {
+    width: 100%; -webkit-appearance: none; appearance: none;
+    background: transparent; cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-runnable-track {
+    background: var(--border-color); height: 4px; border-radius: 2px;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    margin-top: -6px; background-color: var(--accent-blue);
+    height: 16px; width: 16px; border-radius: 50%;
+    border: 2px solid var(--bg-secondary);
+  }
+
+  /* Select estilizado */
+  select {
+    width: 100%; padding: 8px 10px;
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px; color: var(--text-primary);
+    font-size: 0.85rem; cursor: pointer;
+  }
+
+  /* Checkboxes */
+  .check-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 0; font-size: 0.8rem;
+    color: var(--text-primary); cursor: pointer;
+  }
+  .check-row input[type="checkbox"] {
+    accent-color: var(--accent-green);
+    width: 14px; height: 14px; cursor: pointer;
+  }
+
+  /* Responsivo */
+  @media (max-width: 1024px) {
+    .app-container { grid-template-columns: 1fr; grid-template-rows: auto auto auto; height: auto; overflow-y: auto; }
+    body { overflow: auto; height: auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <!-- COLUNA ESQUERDA -->
+  <aside class="left-panel">
+    <div class="brand">PROMPT FACTORY v1.0</div>
+    
+    <div>
+      <div class="panel-label">1. Raw Prompt (Input)</div>
+      <textarea id="rawPrompt" oninput="compilePrompt()" placeholder="Cole aqui o seu prompt básico...">Crie uma estratégia de marketing para um novo aplicativo de meditação focado em pessoas com ansiedade.</textarea>
+    </div>
+
+    <div>
+      <div class="panel-label">2. Target AI Engine</div>
+      <div class="target-selector">
+        <div class="target-btn active" onclick="setTarget(this, 'claude')">
+          <span class="icon">🧠</span>Claude 3 Opus
+        </div>
+        <div class="target-btn" onclick="setTarget(this, 'gpt4')">
+          <span class="icon">⚙️</span>GPT-4o
+        </div>
+        <div class="target-btn" onclick="setTarget(this, 'midjourney')">
+          <span class="icon">🎨</span>Midjourney v6
+        </div>
+        <div class="target-btn" onclick="setTarget(this, 'code')">
+          <span class="icon">💻</span>Code/Llama 3
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel-label">3. Techniques / Presets</div>
+      <select onchange="applyPreset(this.value)">
+        <option value="custom">— Custom —</option>
+        <option value="analise">📊 Deep Analysis (Analítico)</option>
+        <option value="criativo">✨ Creative Storm (Brainstorm)</option>
+        <option value="codigo">🛠️ Senior Engineering</option>
+        <option value="copy">✍️ Direct Response Copy</option>
+      </select>
+    </div>
+  </aside>
+
+  <!-- COLUNA CENTRAL -->
+  <main class="center-panel">
+    <div class="topology-bar">
+      <div class="topology-info">
+        <span>Engine: <strong id="targetName" style="color:var(--accent-blue)">Claude 3 Opus</strong></span>
+        <span>•</span>
+        <span>Syntax: <strong id="syntaxName" style="color:var(--accent-purple)">XML Tags</strong></span>
+      </div>
+      <div class="score-badge">QUALITY SCORE: 92/100</div>
+    </div>
+
+    <div class="compiler-view">
+      <div class="compiler-tabs">
+        <button class="compiler-tab active" onclick="switchTab(this, 'final')">Final Prompt</button>
+        <button class="compiler-tab" onclick="switchTab(this, 'variant')">A/B Variant B</button>
+        <button class="compiler-tab" onclick="switchTab(this, 'analysis')">Architect Analysis</button>
+      </div>
+
+      <div id="promptOutput"></div>
+    </div>
+
+    <div class="actions-bar">
+      <button class="btn btn-primary btn-grow" onclick="copyToClipboard()">📋 Copiar para Clipboard</button>
+      <button class="btn">💾 Save Version</button>
+      <button class="btn">🚀 Run A/B Test</button>
+    </div>
+  </main>
+
+  <!-- COLUNA DIREITA -->
+  <aside class="right-panel">
+    <div class="panel-label" style="margin-bottom: 15px;">DIMENSÕES ACP (Framework)</div>
+
+    <!-- Persona -->
+    <div class="dimension-card">
+      <div class="dimension-header">
+        <div class="dimension-title"><span class="dot dot-persona"></span>1. PERSONA COGNITIVA</div>
+      </div>
+      <div class="dimension-desc">Define o "cérebro" e a lógica de processamento.</div>
+      <div class="slider-group">
+        <div class="slider-label"><span>Lógico / Analítico</span><span id="vPersonaL">30%</span></div>
+        <input type="range" min="0" max="100" value="30" oninput="updateLabel('vPersonaL', this.value); compilePrompt()">
+      </div>
+      <div class="slider-group">
+        <div class="slider-label"><span>Criativo / Estratégico</span><span id="vPersonaC">70%</span></div>
+        <input type="range" min="0" max="100" value="70" oninput="updateLabel('vPersonaC', this.value); compilePrompt()">
+      </div>
+      <div class="slider-group">
+        <div class="slider-label"><span>Pragmático / Builder</span><span id="vPersonaP">50%</span></div>
+        <input type="range" min="0" max="100" value="50" oninput="updateLabel('vPersonaP', this.value); compilePrompt()">
+      </div>
+    </div>
+
+    <!-- Tom -->
+    <div class="dimension-card">
+      <div class="dimension-header">
+        <div class="dimension-title"><span class="dot dot-tone"></span>2. TOM & VOZ</div>
+      </div>
+      <div class="slider-group">
+        <div class="slider-label"><span>Formal</span><span>Informal</span></div>
+        <input type="range" min="0" max="100" value="30" oninput="compilePrompt()">
+      </div>
+      <div class="slider-group">
+        <div class="slider-label"><span>Direto / Prescritivo</span><span>30%</span></div>
+        <input type="range" min="0" max="100" value="30" oninput="compilePrompt()">
+      </div>
+    </div>
+
+    <!-- Execução -->
+    <div class="dimension-card">
+      <div class="dimension-header">
+        <div class="dimension-title"><span class="dot dot-execution"></span>3. ARQUITETURA DE EXECUÇÃO</div>
+      </div>
+      <div class="dimension-desc">Como a IA deve raciocinar antes de responder.</div>
+      <select onchange="compilePrompt()">
+        <option>Zero-Shot (Resposta Direta)</option>
+        <option selected>Chain of Thought (Pense passo a passo)</option>
+        <option>Tree of Thoughts (Gere 3 alternativas)</option>
+        <option>Self-Correction (Reflexão + Refinamento)</option>
+      </select>
+    </div>
+
+    <!-- Topologia -->
+    <div class="dimension-card">
+      <div class="dimension-header">
+        <div class="dimension-title"><span class="dot dot-format"></span>4. TOPOLOGIA DE SAÍDA</div>
+      </div>
+      <div class="dimension-desc">A estrutura exata da resposta final.</div>
+      <label class="check-row"><input type="checkbox" checked> Resumo Executivo (TL;DR)</label>
+      <label class="check-row"><input type="checkbox" checked> Bullet Points Estruturados</label>
+      <label class="check-row"><input type="checkbox"> Tabela Markdown</label>
+      <label class="check-row"><input type="checkbox"> Próximos Passos Acionáveis</label>
+    </div>
+
+    <!-- Guardrails -->
+    <div class="dimension-card">
+      <div class="dimension-header">
+        <div class="dimension-title"><span class="dot dot-guard"></span>5. GUARDRAILS (FREIOS)</div>
+      </div>
+      <label class="check-row"><input type="checkbox" checked> Modo Anti-Alucinação (Só use o contexto)</label>
+      <label class="check-row"><input type="checkbox"> Score de Confiança (1-10)</label>
+      <label class="check-row"><input type="checkbox"> Apresentar Contra-Argumentos</label>
+    </div>
+
+  </aside>
+</div>
+
+<script>
+  // Estado da Aplicação
+  let currentTarget = 'claude';
+
+  // Funções de UI
+  function updateLabel(id, value) { document.getElementById(id).innerText = value + '%'; }
+
+  function setTarget(btn, target) {
+    document.querySelectorAll('.target-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentTarget = target;
+    
+    const names = {
+      'claude': ['Claude 3 Opus', 'XML Tags'],
+      'gpt4': ['GPT-4o', 'Markdown / Delimiters'],
+      'midjourney': ['Midjourney v6', 'Visual Keywords + Params'],
+      'code': ['Llama 3 / Code', 'Tech Stack / JSON']
+    };
+    document.getElementById('targetName').innerText = names[target][0];
+    document.getElementById('syntaxName').innerText = names[target][1];
+    compilePrompt();
+  }
+
+  function switchTab(btn, tab) {
+    document.querySelectorAll('.compiler-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    compilePrompt();
+  }
+
+  // Motor de Compilação (Simulação da Logic ACP)
+  function compilePrompt() {
+    const raw = document.getElementById('rawPrompt').value;
+    const output = document.getElementById('promptOutput');
+    
+    if (!raw.trim()) {
+      output.innerHTML = '<span style="color: var(--text-secondary);">// O prompt compilado aparecerá aqui em tempo real...</span>';
+      return;
+    }
+
+    let compiled = '';
+
+    if (currentTarget === 'claude') {
+      compiled = `<span class="tag tag-persona">&lt;persona&gt;</span>
+Você é um Estrategista de Marketing Sênior e Copywriter especialista em saúde mental e apps de bem-estar. Combina pensamento analítico (First Principles) com forte empatia.
+
+<span class="tag tag-context">&lt;context&gt;</span>
+O utilizador precisa de uma estratégia para o seguinte projeto:
+"${raw}"
+
+Público-alvo: Pessoas com ansiedade (25-45 anos, urbanas). 
+Objetivo: Conversão (downloads) e retenção (D7).
+
+<span class="tag tag-execution">&lt;reasoning_strategy&gt;</span>
+1. Analise o problema decompondo-o em pilares (Aquisição, Retenção, Monetização).
+2. Use Chain of Thought: pense passo a passo sobre cada pilar.
+3. Gere 3 ângulos criativos de campanha (dor, solução, transformação).
+4. Avalie cada ângulo e selecione o mais forte.
+
+<span class="tag tag-format">&lt;output_format&gt;</span>
+Comece com um Resumo Executivo (TL;DR) em 3 linhas.
+Depois, detalhe a estratégia em Bullet Points estruturados.
+Termine com uma tabela Markdown de "Próximos Passos Acionáveis" (7 dias).
+
+<span class="tag tag-guard">&lt;guardrails&gt;</span>
+- Use linguagem empática, nunca alarmista.
+- Não invente estatísticas. Se precisar de dados, indique fontes genéricas a verificar.
+- Evite jargões de marketing vazios (ex: "disruptivo", "revolucionário").
+
+<span class="tag tag-persona">&lt;/persona&gt;</span>`;
+    } 
+    else if (currentTarget === 'gpt4') {
+      compiled = `### ROLE
+Atue como um Estrategista de Marketing Sênior especialista em saúde mental.
+
+### CONTEXT
+Projeto: ${raw}
+Público-alvo: Pessoas com ansiedade (25-45 anos).
+
+### INSTRUCTIONS
+1. Decomponha em Aquisição, Retenção e Monetização.
+2. Use raciocínio Chain-of-Thought em cada secção.
+3. Gere 3 ângulos de campanha (Dor, Solução, Transformação).
+4. Selecione o mais forte e justifique.
+
+### OUTPUT FORMAT
+**TL;DR:** (3 linhas)
+- **Estratégia Detalhada:** (Bullet points)
+- **Plano de Ação 7 dias:** (Tabela)
+
+### CONSTRAINTS
+Não invente dados. Evite jargões vazios.`;
+    }
+    else if (currentTarget === 'midjourney') {
+      compiled = `<span style="color:var(--accent-purple)">// Midjourney Translator Active</span>
+
+strategic marketing meeting, diverse team around a glowing holographic dashboard, soft purple and teal neon lights, calming zen atmosphere, anxiety relief app concept, minimalist UI on large screen, lush indoor plants, glass walls, morning sunlight volumetric rays, cinematic composition, shallow depth of field, hyper-realistic photography, Sony A7IV, 35mm lens --ar 16:9 --v 6.0 --style raw --stylize 250`;
+    }
+    else if (currentTarget === 'code') {
+      compiled = `<span class="tag tag-persona">// SYSTEM: Senior Software Architect</span>
+
+**Task:** Develop a scalable backend module for: ${raw}
+
+**Stack:** Python 3.11, FastAPI, PostgreSQL, Redis.
+
+**Requirements:**
+- Implement Clean Architecture (Domain, Application, Infrastructure).
+- Use Async/Await for all I/O operations.
+- Include Pydantic models for data validation.
+- Add structured logging (JSON format).
+- Implement circuit breaker pattern for external calls.
+
+**Output Format:**
+Return ONLY valid Python code blocks with:
+1. File structure tree.
+2. Code for each file.
+3. Brief explanation of design choices.
+
+**Constraints:**
+- Handle all edge cases (empty input, network errors).
+- No placeholder comments like '# TODO'.
+- Add type hints everywhere.`;
+    }
+
+    output.innerHTML = compiled;
+  }
+
+  function applyPreset(preset) {
+    if (preset === 'custom') return;
+    const raw = document.getElementById('rawPrompt');
+    if (preset === 'analise') raw.value = "Analise a viabilidade financeira e os riscos de abrir uma franquia de gelados artesanais em Lisboa.";
+    if (preset === 'criativo') raw.value = "Brainstorm de 20 nomes criativos para uma marca de café de especialidade sustentável.";
+    if (preset === 'codigo') raw.value = "Crie uma API RESTful em FastAPI para gerir um inventário de uma biblioteca.";
+    if (preset === 'copy') raw.value = "Escreva 3 variações de email de cold outreach para vender serviços de consultoria de IA.";
+    compilePrompt();
+  }
+
+  function copyToClipboard() {
+    const text = document.getElementById('promptOutput').innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.querySelector('.btn-primary');
+      const original = btn.innerText;
+      btn.innerText = '✅ Copiado!';
+      setTimeout(() => btn.innerText = original, 2000);
+    });
+  }
+
+  // Inicialização
+  compilePrompt();
+</script>
+
+</body>
+</html>
